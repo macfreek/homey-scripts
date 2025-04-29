@@ -23,9 +23,9 @@ First, make sure that nodejs and npm are installed on your local computer.
 
 Next, download these scripts, and install the required `homey-api` package:
 
-$ git clone https://github.com/macfreek/homey-scripts
-$ cd homey-scripts
-$ npm install homey-api
+    $ git clone https://github.com/macfreek/homey-scripts
+    $ cd homey-scripts
+    $ npm install homey-api
 
 Configure your credentials to interact with your Homey in a file `config.js`:
 
@@ -44,17 +44,17 @@ The token can be generated on your local Homey and found at https://my.homey.app
 
 Once set, run any script on your local computer:
 
-    $ node devices.ts
+    $ node devices.js
 
-Troubleshooting
----------------
+Scripts
+-------
 
-Q: I get an error `TypeError [ERR_UNKNOWN_FILE_EXTENSION]: Unknown file extension ".ts"`
+* `devices.js`: List all devices
+* `flows.js`: List all flows
+* `variables.js`: List all variables
+* `broken-flows.js`: Detect and report about broken flows
+* `no-nbsp.js`: Replace non-breaking spaces in names with regular spaces
 
-A: If you use nodejs older than v22.6.0, you are out of luck, as nodejs does not support Typescript yet.
-If you use nodejs between v22.6.0 and v22.7.0, use the `--experimental-strip-types` flag. If you use nodejs v22.7.0 or later, run with `--experimental-transform-types` and optional `--disable-warning=ExperimentalWarning` flags:
-
-    $ node --experimental-transform-types --disable-warning=ExperimentalWarning devices.ts
 
 Other Useful links
 ------------------
