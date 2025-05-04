@@ -7,6 +7,9 @@
 // Based on isBroken() method by AtHom,
 // as published in homey-api npm package.
 
+// Broken flows are printed to the console.
+// An error field is added to these flows to indicate what's wrong.
+
 import { HomeyAPI } from 'homey-api';
 import CONFIG from "./config.json" with { type: "json" };;
 const Homey = await HomeyAPI.createLocalAPI(CONFIG.homey);
@@ -29,7 +32,8 @@ const asyncFilter = async (arr, predicate) => {
 const brokenFlows = await asyncFilter(Object.values(flows), flow => IsBroken(flow));
 
 console.log(brokenFlows.length + " of " + Object.values(flows).length + " flows are broken")
-console.log(brokenFlows);
+console.log(JSON.stringify(brokenFlows, null, 2));
+
 
 async function IsBroken(flow) {
   // Array of local & global Token IDs.
