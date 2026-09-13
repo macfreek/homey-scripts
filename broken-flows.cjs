@@ -65,9 +65,9 @@ async function main() {
 
   // Fill the cache
   const flowTokens = await Homey.flowtoken.getFlowTokens();
-
-  // To get false positives (for testing), replace the above with:
-  // const flowTokens = {};
+  await Homey.flow.getFlowCardTriggers();
+  await Homey.flow.getFlowCardConditions();
+  await Homey.flow.getFlowCardActions();
 
   // Since filter must be synchronous, run in two steps.
   // Store boolean results in an array, and await those result
@@ -122,7 +122,7 @@ async function IsBroken(flow, flowTokens, flowIds) {
   // For example [ 'foo', 'homey:x:y|abc' ]
   const tokenIds = [];
 
-  const checkToken = async tokenId => {
+  const checkToken = tokenId => {
     // If this is a global Token, fetch all FlowTokens
     if (tokenId.includes('|')) {
       for (const flowTokenId of Object.keys(flowTokens)) {
@@ -136,17 +136,17 @@ async function IsBroken(flow, flowTokens, flowIds) {
     }
   };
 
-  const checkTokens = async card => {
+  const checkTokens = card => {
     // Check droptoken
     if (card.droptoken) {
-      await checkToken(card.droptoken);
+      checkToken(card.droptoken);
     }
 
     if (typeof card.args === 'object') {
       for (const arg of Object.values(card.args)) {
         if (typeof arg !== 'string') continue;
         for (const [tokenMatch, tokenId] of arg.matchAll(/\[\[(.*?)\]\]/g)) {
-          await checkToken(tokenId);
+          checkToken(tokenId);
         }
       }
     }
@@ -166,7 +166,7 @@ async function IsBroken(flow, flowTokens, flowIds) {
       // getFlowCardTriggers
       // warning: getFlowCardTrigger() is very slow
       const triggerCard = await flow.manager.getFlowCardTrigger({ id: flow.trigger.id });
-      await checkTokens(flow.trigger);
+      checkTokens(flow.trigger);
       checkFlowReference(flow.trigger);
       // Add FlowCardTrigger.tokens to internal tokens cache
       if (Array.isArray(triggerCard.tokens)) {
@@ -176,7 +176,6 @@ async function IsBroken(flow, flowTokens, flowIds) {
       }
     } catch (err) {
       flow.error = err.message;
-      // flow.broken = true;
       return true;
     }
   }
@@ -188,11 +187,10 @@ async function IsBroken(flow, flowTokens, flowIds) {
         // getFlowCardConditions
         // eslint-disable-next-line no-unused-vars
         const conditionCard = await flow.manager.getFlowCardCondition({ id: condition.id });
-        await checkTokens(condition);
+        checkTokens(condition);
         checkFlowReference(condition);
       } catch (err) {
         flow.error = err.message;
-        // flow.broken = true;
         return true;
       }
     }
@@ -205,11 +203,10 @@ async function IsBroken(flow, flowTokens, flowIds) {
         // getFlowCardActions
         // eslint-disable-next-line no-unused-vars
         const actionCard = await flow.manager.getFlowCardAction({ id: action.id });
-        await checkTokens(action);
+        checkTokens(action);
         checkFlowReference(action);
       } catch (err) {
         flow.error = err.message;
-        // flow.broken = true;
         return true;
       }
     }
