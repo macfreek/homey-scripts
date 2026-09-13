@@ -6,7 +6,8 @@
 // Based on fix-flows-by-id.js by Martijn Poppe
 // Script: https://gist.github.com/martijnpoppen/dcf0b8fd3f7fe63dec087c87dbc66090#file-fix-flows-by-id-js
 // Info: https://community.homey.app/t/how-to-pro-cloud-tool-to-fix-advanced-flows-after-removing-and-re-adding-devices/65018
-// That script has been improved to be explicit in what to changed (at the cost of a little bit overhead)
+// That script has been improved to be explicit in what to change
+// (at the cost of a little bit overhead)
 // and it now catches and reports about exceptions.
 
 import { HomeyAPI } from 'homey-api';
