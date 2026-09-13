@@ -76,7 +76,9 @@ async function main() {
     return arr.filter((_v, index) => results[index]);
   };
 
-  const brokenFlows = await asyncFilter(Object.values(flows), flow => IsBroken(flow, flowTokens));
+  const flowIds = new Set(Object.keys(flows));
+
+  const brokenFlows = await asyncFilter(Object.values(flows), flow => IsBroken(flow, flowTokens, flowIds));
 
   const report = buildReport(brokenFlows, Object.values(flows).length, MAX_LIST_LENGTH, JSON_OUTPUT);
 
@@ -115,7 +117,7 @@ function buildReport(brokenFlows, totalFlows, MAX_LIST_LENGTH, JSON_OUTPUT) {
   return [summary, ...lines].join('\n');
 }
 
-async function IsBroken(flow, flowTokens) {
+async function IsBroken(flow, flowTokens, flowIds) {
   // Array of local & global Token IDs.
   // For example [ 'foo', 'homey:x:y|abc' ]
   const tokenIds = [];
@@ -150,6 +152,14 @@ async function IsBroken(flow, flowTokens) {
     }
   };
 
+  const checkFlowReference = card => {
+    // Cards like "Enable/Disable Flow" reference another flow by id+name.
+    const flowRef = card.args?.flow;
+    if (flowRef && typeof flowRef.id === 'string' && !flowIds.has(flowRef.id)) {
+      throw new Error(`Referenced flow not found: "${flowRef.name}"`);
+    }
+  };
+
   // Check Trigger
   if (flow.trigger) {
     try {
@@ -157,6 +167,7 @@ async function IsBroken(flow, flowTokens) {
       // warning: getFlowCardTrigger() is very slow
       const triggerCard = await flow.manager.getFlowCardTrigger({ id: flow.trigger.id });
       await checkTokens(flow.trigger);
+      checkFlowReference(flow.trigger);
       // Add FlowCardTrigger.tokens to internal tokens cache
       if (Array.isArray(triggerCard.tokens)) {
         for (const tokenId of Object.keys(triggerCard.tokens)) {
@@ -178,6 +189,7 @@ async function IsBroken(flow, flowTokens) {
         // eslint-disable-next-line no-unused-vars
         const conditionCard = await flow.manager.getFlowCardCondition({ id: condition.id });
         await checkTokens(condition);
+        checkFlowReference(condition);
       } catch (err) {
         flow.error = err.message;
         // flow.broken = true;
@@ -194,6 +206,7 @@ async function IsBroken(flow, flowTokens) {
         // eslint-disable-next-line no-unused-vars
         const actionCard = await flow.manager.getFlowCardAction({ id: action.id });
         await checkTokens(action);
+        checkFlowReference(action);
       } catch (err) {
         flow.error = err.message;
         // flow.broken = true;
