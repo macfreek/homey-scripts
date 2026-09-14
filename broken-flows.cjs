@@ -48,17 +48,7 @@ async function main() {
     const { default: CONFIG } = await import('./config.json', { with: { type: 'json' } });
     globalThis.Homey = await HomeyAPI.createLocalAPI(CONFIG.homey);
 
-    const args = process.argv.slice(2);
-    for (let i = 0; i < args.length; i++) {
-      if (args[i] === '--json') {
-        JSON_OUTPUT = true;
-      } else if (args[i] === '--max') {
-        MAX_LIST_LENGTH = args[++i] === 'all' ? -1 : Number(args[i]);
-      } else if (args[i].startsWith('--max=')) {
-        const value = args[i].slice('--max='.length);
-        MAX_LIST_LENGTH = value === 'all' ? -1 : Number(value);
-      }
-    }
+    ({ MAX_LIST_LENGTH, JSON_OUTPUT } = parseArgs(process.argv.slice(2)));
   }
 
   const flows = await Homey.flow.getFlows();
@@ -96,7 +86,37 @@ async function main() {
   console.log(report);
 }
 
+function parseArgs(argv) {
+  let JSON_OUTPUT = false;
+  let MAX_LIST_LENGTH;
+
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--json') {
+      JSON_OUTPUT = true;
+    } else if (argv[i] === '--max') {
+      MAX_LIST_LENGTH = argv[++i] === 'all' ? -1 : Number(argv[i]);
+    } else if (argv[i].startsWith('--max=')) {
+      const value = argv[i].slice('--max='.length);
+      MAX_LIST_LENGTH = value === 'all' ? -1 : Number(value);
+    }
+  }
+
+  // Default length depends on --json, so it must be resolved after the loop
+  if (MAX_LIST_LENGTH === undefined) {
+    MAX_LIST_LENGTH = JSON_OUTPUT ? -1 : 4;
+  }
+
+  return { MAX_LIST_LENGTH, JSON_OUTPUT };
+}
+
 function buildReport(brokenFlows, totalFlows, MAX_LIST_LENGTH, JSON_OUTPUT) {
+  const showAll = MAX_LIST_LENGTH < 0;
+  const shown = showAll ? brokenFlows : brokenFlows.slice(0, MAX_LIST_LENGTH);
+
+  if (JSON_OUTPUT) {
+    return JSON.stringify(shown, null, 2);
+  }
+
   if (MAX_LIST_LENGTH === 0) {
     return brokenFlows.length === 0
       ? 'No broken flows found'
@@ -104,11 +124,7 @@ function buildReport(brokenFlows, totalFlows, MAX_LIST_LENGTH, JSON_OUTPUT) {
   }
 
   const summary = `${brokenFlows.length} of ${totalFlows} flows are broken`;
-  const showAll = MAX_LIST_LENGTH < 0;
-  const shown = showAll ? brokenFlows : brokenFlows.slice(0, MAX_LIST_LENGTH);
-  const lines = shown.map(flow =>
-    JSON_OUTPUT ? JSON.stringify(flow, null, 2) : `Flow "${flow.name}" is broken: ${flow.error}`
-  );
+  const lines = shown.map(flow => `Flow "${flow.name}" is broken: ${flow.error}`);
   const remaining = brokenFlows.length - shown.length;
   if (remaining > 0) {
     lines.push(`...and ${remaining} more`);
