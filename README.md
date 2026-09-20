@@ -54,7 +54,7 @@ Scripts
 * `variables.js`: List all variables
 * `broken-flows.js`: Detect and report about broken flows
 * `no-nbsp.js`: Replace non-breaking spaces in names with regular spaces
-
+* `basic-to-advanced-flows.js`: Convert a basic flow to an advanced flow
 
 Other Useful links
 ------------------
