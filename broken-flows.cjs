@@ -32,6 +32,7 @@
 // 28-04-2025: first version
 // 13-09-2026: script can run on a remote computer; in the HomeyScript 
 //             window; or as a flow card.
+// 20-09-2026: fix: support bare-token references
 
 
 const isHomeyScript = typeof Homey !== 'undefined';
@@ -184,10 +185,13 @@ async function IsBroken(flow, flowTokens, flowIds) {
       const triggerCard = await flow.manager.getFlowCardTrigger({ id: flow.trigger.id });
       checkTokens(flow.trigger);
       checkFlowReference(flow.trigger);
-      // Add FlowCardTrigger.tokens to internal tokens cache
+      // Add FlowCardTrigger.tokens to internal tokens cache. tokens is an
+      // array of {id, type, title, ...} objects, not a map - Object.keys()
+      // here would give array indices ("0", "1", ...) instead of the
+      // actual token ids.
       if (Array.isArray(triggerCard.tokens)) {
-        for (const tokenId of Object.keys(triggerCard.tokens)) {
-          tokenIds.push(tokenId);
+        for (const token of triggerCard.tokens) {
+          tokenIds.push(token.id);
         }
       }
     } catch (err) {
